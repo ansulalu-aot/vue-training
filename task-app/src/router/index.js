@@ -1,12 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import TaskList from "../components/TaskList.vue";
-import AddTask from "../components/AddTask.vue";
-import EditTask from "../components/EditTask.vue";
+import AddEditTask from "../components/AddEditTask.vue";
 
 const routes = [
   { path: "/", component: TaskList },
-  { path: "/add", component: AddTask },
-  { path: "/edit/:taskId", component: EditTask, props: true },
+  { path: "/add", component: AddEditTask },
+  { path: "/edit/:taskId", component: AddEditTask, props: true },
 ];
 
 const router = createRouter({

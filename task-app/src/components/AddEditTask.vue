@@ -1,6 +1,8 @@
 <template>
   <div>
-    <h2>Edit Task</h2>
+    <h2>Task Management</h2>
+    <hr />
+    <h3>{{ isEditing ? "Edit Task" : "Add Task" }}</h3>
     <form @submit.prevent="saveTask">
       <div class="form-group">
         <label for="taskName">Task Name:</label>
@@ -30,7 +32,9 @@
         ></textarea>
       </div>
       <div>
-        <button class="submit" type="submit">Save Task</button>
+        <button class="submit" type="submit">
+          {{ isEditing ? "Save" : "Submit" }}
+        </button>
         <button @click="cancel">Cancel</button>
       </div>
     </form>
@@ -41,25 +45,65 @@
 export default {
   data() {
     return {
-      task: null,
+      task: {
+        id: "",
+        name: "",
+        projectName: "",
+        purpose: "",
+        reference: "",
+        completed: false,
+      },
+      error: "", // New error property for displaying database errors
     };
+  },
+  computed: {
+    isEditing() {
+      return !!this.$route.params.taskId;
+    },
   },
   methods: {
     saveTask() {
       const database = this.$firebase.database();
       const tasksRef = database.ref("tasks");
 
-      // Save the updated task to the database
-      tasksRef.child(this.task.id).update(this.task);
-
-      // Redirect to the task listing page
-      this.$router.push("/");
+      if (this.isEditing) {
+        // Update the existing task in the database
+        tasksRef
+          .child(this.task.id)
+          .update(this.task)
+          .then(() => {
+            // Redirect to the task listing page after successful update
+            this.$router.push("/");
+          })
+          .catch((error) => {
+            // Display error message if edit fails
+            console.error("Error editing task: ", error);
+            this.error = "Error editing task: " + error.message;
+          });
+      } else {
+        // Generate a new unique ID for the task
+        this.task.id = tasksRef.push().key;
+        // Save the new task to the database
+        tasksRef
+          .child(this.task.id)
+          .set(this.task)
+          .then(() => {
+            // Redirect to the task listing page after successful save
+            this.$router.push("/");
+          })
+          .catch((error) => {
+            // Display error message if add fails
+            console.error("Error adding task: ", error);
+            this.error = "Error adding task: " + error.message;
+          });
+      }
     },
-  },
-  created() {
-    const taskId = this.$route.params.taskId;
-
-    if (taskId) {
+    cancel() {
+      // Go back to the main page and clear any existing error
+      this.$router.push("/");
+      this.error = "";
+    },
+    fetchTask(taskId) {
       // Retrieve the task details from the database
       const database = this.$firebase.database();
       const tasksRef = database.ref("tasks");
@@ -67,13 +111,21 @@ export default {
       tasksRef.child(taskId).on("value", (snapshot) => {
         this.task = snapshot.val();
       });
+    },
+  },
+  created() {
+    const taskId = this.$route.params.taskId;
+
+    if (this.isEditing && taskId) {
+      this.fetchTask(taskId);
     }
   },
 };
 </script>
 
 <style>
-h2 {
+h2,
+h3 {
   text-align: left;
 }
 
