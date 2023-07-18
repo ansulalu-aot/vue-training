@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h2>Login or Register</h2>
+  <h2>Welcome To Task Management</h2>
+  <div class="container">
     <form v-if="loginMode" @submit.prevent="loginWithEmail">
       <div class="form-group">
         <label>Email:</label>
@@ -12,7 +12,7 @@
       </div>
       <!-- Display error message if present -->
       <p v-if="error" style="color: red">{{ error }}</p>
-      <button type="submit">Login</button>
+      <button class="submit" type="submit">Login</button>
       <button type="button" @click="toggleMode">Register Instead</button>
     </form>
 
@@ -27,7 +27,7 @@
       </div>
       <!-- Display error message if present -->
       <p v-if="error" style="color: red">{{ error }}</p>
-      <button type="submit">Register</button>
+      <button class="submit" type="submit">Register</button>
       <button type="button" @click="toggleMode">Login Instead</button>
     </form>
   </div>
@@ -88,3 +88,34 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+h2 {
+  text-align: center;
+}
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 5rem;
+}
+.submit {
+  background-color: grey;
+  color: white;
+}
+input {
+  width: 500px;
+}
+@media (max-width: 770px) {
+  input {
+    width: auto;
+  }
+  h2 {
+    margin-top: 3rem;
+  }
+  button {
+    font-size: 10px;
+  }
+}
+</style>

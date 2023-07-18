@@ -2,7 +2,7 @@
   <div>
     <nav>
       <h1>Task List</h1>
-      <button v-if="user" class="logout" @click="logout">Logout</button>
+      <button v-if="user" @click="logout">Logout</button>
     </nav>
     <div class="toolbar">
       <div class="search-bar">
@@ -201,6 +201,8 @@ nav {
 }
 nav button {
   margin: 0rem;
+  background-color: grey;
+  color: white;
 }
 .completed-task {
   text-decoration: line-through;

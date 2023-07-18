@@ -152,7 +152,6 @@ h2,
 h3 {
   text-align: left;
 }
-
 hr {
   border: 1px solid grey;
 }
