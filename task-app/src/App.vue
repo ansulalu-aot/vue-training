@@ -10,4 +10,10 @@
   margin: 30px;
   text-align: center;
 }
+
+@media (max-width: 770px) {
+  #app {
+    margin: 10px;
+  }
+}
 </style>

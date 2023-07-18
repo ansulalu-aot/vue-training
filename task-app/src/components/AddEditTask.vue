@@ -31,6 +31,9 @@
           required
         ></textarea>
       </div>
+      <!-- Display error message if present -->
+      <p v-if="error" style="color: red">{{ error }}</p>
+
       <div>
         <button class="submit" type="submit">
           {{ isEditing ? "Save" : "Submit" }}
@@ -42,16 +45,22 @@
 </template>
 
 <script>
+import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import "firebase/compat/firestore";
 export default {
+  name: "AddEditTask",
   data() {
     return {
       task: {
+        user: null,
         id: "",
         name: "",
         projectName: "",
         purpose: "",
         reference: "",
         completed: false,
+        userId: "",
       },
       error: "", // New error property for displaying database errors
     };
@@ -73,7 +82,7 @@ export default {
           .update(this.task)
           .then(() => {
             // Redirect to the task listing page after successful update
-            this.$router.push("/");
+            this.$router.push("/tasks");
           })
           .catch((error) => {
             // Display error message if edit fails
@@ -89,7 +98,7 @@ export default {
           .set(this.task)
           .then(() => {
             // Redirect to the task listing page after successful save
-            this.$router.push("/");
+            this.$router.push("/tasks");
           })
           .catch((error) => {
             // Display error message if add fails
@@ -100,7 +109,7 @@ export default {
     },
     cancel() {
       // Go back to the main page and clear any existing error
-      this.$router.push("/");
+      this.$router.push("/tasks");
       this.error = "";
     },
     fetchTask(taskId) {
@@ -108,14 +117,29 @@ export default {
       const database = this.$firebase.database();
       const tasksRef = database.ref("tasks");
 
-      tasksRef.child(taskId).on("value", (snapshot) => {
-        this.task = snapshot.val();
+      tasksRef.child(taskId).once("value", (snapshot) => {
+        const task = snapshot.val();
+        // Check if the task exists and if it belongs to the currently logged-in user
+        const currentUser = firebase.auth().currentUser;
+        if (task && currentUser && task.userId === currentUser.uid) {
+          this.task = task;
+        } else {
+          // Redirect to the task listing page if the task does not exist or doesn't belong to the user
+          this.$router.push("/tasks");
+        }
       });
     },
   },
   created() {
+    // Listen for Firebase Authentication state changes
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // If the user is logged in, update the userId property of the task
+        this.task.userId = user.uid;
+      }
+    });
+    // Check if it's an edit task page and fetch the task details
     const taskId = this.$route.params.taskId;
-
     if (this.isEditing && taskId) {
       this.fetchTask(taskId);
     }
