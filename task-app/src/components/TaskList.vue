@@ -4,6 +4,7 @@
       <h1>Task List</h1>
       <button v-if="user" @click="logout">Logout</button>
     </nav>
+    <p v-if="user">User : {{ user.email }}</p>
     <div class="toolbar">
       <div class="search-bar">
         <input
@@ -28,14 +29,46 @@
     <table class="task-table">
       <thead>
         <tr>
-          <th>No</th>
-          <th>Task Name</th>
-          <th>Project Name</th>
+          <th
+            @click="
+              sortKey = 'no';
+              toggleSortOrder();
+            "
+          >
+            No
+          </th>
+          <th>
+            <b
+              @click="
+                sortKey = 'task name';
+                toggleSortOrder();
+              "
+              >⇅</b
+            >
+            Task Name
+          </th>
+          <th>
+            <b
+              @click="
+                sortKey = 'project name';
+                toggleSortOrder();
+              "
+              >⇅</b
+            >
+            Project Name
+          </th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(task, index) in filteredTasks" :key="task.id">
+        <tr
+          v-for="(task, index) in filteredTasks"
+          :key="task.id"
+          :draggable="true"
+          @dragstart="dragStart(index)"
+          @dragover="dragOver(index)"
+          @dragend="dragEnd"
+        >
           <td>{{ index + 1 }}</td>
           <td :class="{ 'completed-task': task.completed }">{{ task.name }}</td>
           <td style="text-transform: uppercase">{{ task.projectName }}</td>
@@ -65,6 +98,10 @@ export default {
       showOnlyCompletedTasks: false, // Flag to toggle showing only completed tasks
       searchTerm: "", // Input value of the search bar
       error: "", // New error property for displaying errors
+      sortKey: "no",
+      sortAscending: true,
+      dragIndex: null,
+      dropIndex: null,
     };
   },
   computed: {
@@ -80,7 +117,24 @@ export default {
       if (this.showOnlyCompletedTasks) {
         filtered = filtered.filter((task) => task.completed);
       }
-
+      // Sort the tasks based on the current sort key and sort order
+      if (this.sortKey === "no") {
+        filtered = filtered.sort((a, b) =>
+          this.sortAscending ? a.id - b.id : b.id - a.id
+        );
+      } else if (this.sortKey === "task name") {
+        filtered = filtered.sort((a, b) =>
+          this.sortAscending
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name)
+        );
+      } else if (this.sortKey === "project name") {
+        filtered = filtered.sort((a, b) =>
+          this.sortAscending
+            ? a.projectName.localeCompare(b.projectName)
+            : b.projectName.localeCompare(a.projectName)
+        );
+      }
       return filtered;
     },
     completedTasksCount() {
@@ -88,6 +142,43 @@ export default {
     },
   },
   methods: {
+    // Handle drag start
+    dragStart(index) {
+      this.dragIndex = index;
+    },
+    // Handle drag over
+    dragOver(index) {
+      if (this.dragIndex !== index) {
+        this.dropIndex = index;
+      }
+    },
+    // Handle drag end
+    dragEnd() {
+      if (this.dragIndex !== null && this.dropIndex !== null) {
+        // Get the dragged task and drop task from the original tasks array
+        const draggedTask = this.tasks[this.dragIndex];
+        const dropTask = this.tasks[this.dropIndex];
+
+        // Swap the tasks in the original tasks array
+        this.tasks.splice(this.dragIndex, 1, dropTask);
+        this.tasks.splice(this.dropIndex, 1, draggedTask);
+
+        this.dragIndex = null;
+        this.dropIndex = null;
+      }
+    },
+    toggleSortOrder() {
+      // If the sortKey is the same as the previously selected one, toggle the sort order
+      if (this.sortKey === this.prevSortKey) {
+        this.sortAscending = !this.sortAscending;
+      } else {
+        this.sortAscending = true; // Reset the sort order to ascending if sorting by a different key
+      }
+      this.prevSortKey = this.sortKey; // Save the current sort key for future reference
+
+      // Apply the sort order directly to the filtered array
+      this.filteredTasks.reverse();
+    },
     fetchTasks() {
       const database = this.$firebase.database();
       const tasksRef = database.ref("tasks");
@@ -240,7 +331,7 @@ input {
   color: white;
   border: none;
 }
-.completed-count {
+p {
   margin-bottom: 2rem;
   text-align: left;
 }
@@ -255,6 +346,9 @@ input {
 }
 .task-table th {
   text-align: center;
+}
+b {
+  cursor: pointer;
 }
 td button {
   margin-top: 2px;

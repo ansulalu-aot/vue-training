@@ -1,5 +1,6 @@
 <template>
-  <h2>Welcome To Task Management</h2>
+  <h1>Welcome To Task Management</h1>
+  <h2>{{ loginMode ? "Login" : "Register" }}</h2>
   <div class="container">
     <form v-if="loginMode" @submit.prevent="loginWithEmail">
       <div class="form-group">
@@ -50,6 +51,13 @@ export default {
   methods: {
     async toggleMode() {
       this.loginMode = !this.loginMode;
+      this.clearFields(); // Call the method to clear fields
+    },
+    clearFields() {
+      // Clear the email, password, and error fields
+      this.email = "";
+      this.password = "";
+      this.error = "";
     },
     async loginWithEmail() {
       try {
@@ -81,7 +89,7 @@ export default {
         // You can automatically log in the user after successful registration if desired
         this.$router.push("/tasks");
       } catch (error) {
-        this.error = "Error registering user";
+        this.error = "Already in use by another account";
         console.error("Error registering user:", error);
       }
     },
@@ -92,13 +100,14 @@ export default {
 <style scoped>
 h2 {
   text-align: center;
+  margin-top: 3rem;
 }
 .container {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  margin: 5rem;
+  margin: 3rem;
 }
 .submit {
   background-color: grey;
