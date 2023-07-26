@@ -29,12 +29,14 @@
     <table class="task-table">
       <thead>
         <tr>
-          <th
-            @click="
-              sortKey = 'no';
-              toggleSortOrder();
-            "
-          >
+          <th>
+            <b
+              @click="
+                sortKey = 'no';
+                toggleSortOrder();
+              "
+              >⇅</b
+            >
             No
           </th>
           <th>
@@ -102,6 +104,8 @@ export default {
       sortAscending: true,
       dragIndex: null,
       dropIndex: null,
+      prevSortKey: "",
+      originalTasks: [], // Add a property to store the original tasks before filtering
     };
   },
   computed: {
@@ -116,24 +120,6 @@ export default {
       // If showOnlyCompletedTasks is true, filter tasks to show only completed tasks
       if (this.showOnlyCompletedTasks) {
         filtered = filtered.filter((task) => task.completed);
-      }
-      // Sort the tasks based on the current sort key and sort order
-      if (this.sortKey === "no") {
-        filtered = filtered.sort((a, b) =>
-          this.sortAscending ? a.id - b.id : b.id - a.id
-        );
-      } else if (this.sortKey === "task name") {
-        filtered = filtered.sort((a, b) =>
-          this.sortAscending
-            ? a.name.localeCompare(b.name)
-            : b.name.localeCompare(a.name)
-        );
-      } else if (this.sortKey === "project name") {
-        filtered = filtered.sort((a, b) =>
-          this.sortAscending
-            ? a.projectName.localeCompare(b.projectName)
-            : b.projectName.localeCompare(a.projectName)
-        );
       }
       return filtered;
     },
@@ -175,9 +161,38 @@ export default {
         this.sortAscending = true; // Reset the sort order to ascending if sorting by a different key
       }
       this.prevSortKey = this.sortKey; // Save the current sort key for future reference
+      // Custom sorting based on the "No" column (original order of tasks)
+      // Sort the tasks array based on the current sort key and sort order
+      if (this.sortKey === "no") {
+        this.tasks.sort((a, b) => {
+          if (this.sortAscending) {
+            return (
+              this.originalTasks.indexOf(a) - this.originalTasks.indexOf(b)
+            );
+          } else {
+            return (
+              this.originalTasks.indexOf(b) - this.originalTasks.indexOf(a)
+            );
+          }
+        });
+      } else if (this.sortKey === "task name") {
+        //Sort by task name
+        this.tasks.sort((a, b) =>
+          this.sortAscending
+            ? a.name.localeCompare(b.name)
+            : b.name.localeCompare(a.name)
+        );
+      } else if (this.sortKey === "project name") {
+        //Sort by project name
+        this.tasks.sort((a, b) =>
+          this.sortAscending
+            ? a.projectName.localeCompare(b.projectName)
+            : b.projectName.localeCompare(a.projectName)
+        );
+      }
 
-      // Apply the sort order directly to the filtered array
-      this.filteredTasks.reverse();
+      // Reapply the filtering to the updated tasks array
+      this.filteredTasks = this.tasks;
     },
     fetchTasks() {
       const database = this.$firebase.database();
@@ -198,6 +213,7 @@ export default {
                 }))
               : [];
             this.tasks = tasksArray;
+            this.originalTasks = [...tasksArray]; // Save the original order of tasks
           })
           .catch((error) => {
             console.error("Error fetching tasks:", error);
